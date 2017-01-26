@@ -59,5 +59,3 @@ function getRawData(rows) {
         resolve(jsonData);
     });
 }
-
-// num of weeks = the number of templates divided by: (the sum of each resource * its factor) * complexity

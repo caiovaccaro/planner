@@ -1,28 +1,29 @@
-var google = require('googleapis');
-var auth = require('./auth.js');
-var _ = require('lodash');
-var moment = require('moment');
-var math = require('mathjs');
-var referenceTeamHealth = require('./services/reference-team-health');
-var referenceProjects = require('./services/reference-projects');
-var referenceTeam = require('./services/reference-team');
-var referenceWeeks = require('./services/reference-weeks');
-var inputProjects = require('./services/input-2017-projects');
-var weeks = [];
-var team = [];
-var teamMatrix = [];
-var projectsMatrix = [];
-var teamCareerMatrix = [];
-var teamExperienceMatrix = [];
+var google = require('googleapis'),
+    auth = require('./auth.js'),
+    _ = require('lodash'),
+    moment = require('moment'),
+    math = require('mathjs'),
+    getReferenceTeamHealth = require('./services/reference-team-health'),
+    getReferenceProjects = require('./services/reference-projects'),
+    getReferenceTeam = require('./services/reference-team'),
+    getReferenceWeeks = require('./services/reference-weeks'),
+    getInputProjects = require('./services/input-2017-projects'),
+    weeks = [],
+    team = [],
+    teamMatrix = [],
+    projectsMatrix = [],
+    teamCareerMatrix = [],
+    teamExperienceMatrix = [];
+
 
 auth()
     .then(function(auth) {
         Promise.all([
-                referenceTeamHealth(auth),
-                referenceTeam(auth),
-                referenceProjects(auth),
-                inputProjects(auth),
-                referenceWeeks(auth)
+                getReferenceTeamHealth(auth),
+                getReferenceTeam(auth),
+                getReferenceProjects(auth),
+                getInputProjects(auth),
+                getReferenceWeeks(auth)
             ])
             .then(buildWeeksArray)
             .then(calculateReferenceWeeks)
@@ -32,6 +33,10 @@ auth()
             })
             .then(function(data) {
                 return fillWeeksInput(data, auth);
+            })
+            .then(calculateFinalDates)
+            .then(function(data) {
+                return fillWeeksDatesInput(data, auth);
             })
             .then(calculateProjects)
             .then(buildProjectsTeamOutputMatrix)
@@ -51,6 +56,7 @@ auth()
                 return fillTeamExperienceOutput(auth);
             });
     });
+
 
 /**
  * Build weeks "database"
@@ -83,6 +89,8 @@ function buildWeeksArray(data) {
         weeks.push(week);
     });
 
+    // console.log(weeks);
+
     return Promise.resolve(data);
 }
 
@@ -99,17 +107,31 @@ function buildWeeksArray(data) {
 function calculateProjects() {
     return new Promise(function(resolve, reject) {
         auth()
-            .then(inputProjects)
+            .then(getInputProjects)
             .then(function(data) {
                 _.each(data, function(project) {
                     if (project['Start']) {
-                        var startWeek = moment(project['Start']).week();
+                        var projectStart = project['Start'],
+                            startWeek = moment(projectStart).week(),
+                            numOfWeeks = project['Num of weeks'],
+                            numOfWeeksInteger = parseInt(numOfWeeks, 10),
+                            i = 0,
+                            index, week;
 
-                        for(var i = startWeek - 1; i < project['Num of weeks']; i++) {
-                            weeks[i].projects['Num of ' + project['Type']] += 1;
-                            _.each(weeks[i].team, function(value, key) {
-                                weeks[i].team[key] += parseInt(project[key], 10);
-                            });
+                        if (numOfWeeks) {
+                            for(i; i < numOfWeeksInteger; i++) {
+                                if (moment(projectStart).add(i, 'weeks').year() < 2018) {
+                                    index = startWeek + i - 1;
+                                    week = weeks[index];
+
+                                    (function(week, project) {
+                                        week.projects['Num of ' + project['Type']] += 1;
+                                        _.each(week.team, function(value, key) {
+                                            week.team[key] += parseInt(project[key], 10);
+                                        });
+                                    })(week, project);
+                                }
+                            }
                         }
                     }
                 });
@@ -146,57 +168,38 @@ function buildProjectsOutputMatrix(weeks) {
     return Promise.resolve(weeks);
 }
 
-function getNumberOfExecutionResources(week) {
+function getResources(week) {
     var types = [];
 
     _.each(week.team, function(value, key) {
-        var resource = _.find(team, { ID: key });
-        if (value > 0 && resource['Type']) {
-            for (var i = 0; i <= value; i++) {
-                types.push(resource['Type']);
+        var resource = _.find(team, { ID: key }),
+            resourceType = resource['Type'],
+            i = 0;
+
+        if (value > 0 && resourceType) {
+            for (i; i <= value; i++) {
+                types.push(resourceType);
             }
         }
     });
 
-    return _.filter(types, function(type) {
+    return types;
+}
+
+function getNumberOfExecutionResources(week) {
+    return _.filter(getResources(week), function(type) {
         return type !== 'L' && type !== 'TA'
     }).length;
 }
 
 function getNumberOfLeadershipResources(week) {
-    var types = [];
-
-    _.each(week.team, function(value, key) {
-        var resource = _.find(team, { ID: key });
-        if (value > 0 && resource['Type']) {
-            if (value > 0 && resource['Type']) {
-                for (var i = 0; i <= value; i++) {
-                    types.push(resource['Type']);
-                }
-            }
-        }
-    });
-
-    return _.filter(types, function(type) {
+    return _.filter(getResources(week), function(type) {
         return type === 'L' || type === 'TA'
     }).length;
 }
 
 function getNumberOfTAResources(week) {
-    var types = [];
-
-    _.each(week.team, function(value, key) {
-        var resource = _.find(team, { ID: key });
-        if (value > 0 && resource['Type']) {
-            if (value > 0 && resource['Type']) {
-                for (var i = 0; i <= value; i++) {
-                    types.push(resource['Type']);
-                }
-            }
-        }
-    });
-
-    return _.filter(types, function(type) {
+    return _.filter(getResources(week), function(type) {
         return type === 'TA'
     }).length;
 }
@@ -209,10 +212,14 @@ function getNumberOfTAResources(week) {
  *      calculate the median of A,M,S,L,TA by execution and leadership
  */
 function buildTeamCareerOutputMatrix(weeks) {
-    for (var i = 0; i < weeks.length; i++) {
+    var i = j = k = l = 0,
+        length = weeks.length,
+        row, prop, resource, resourceQty, resourceType;
+
+    for (i; i < length; i++) {
         week = weeks[i];
 
-        var row = [];
+        row = [];
 
         row[0] = 0;
         row[1] = 0;
@@ -226,28 +233,28 @@ function buildTeamCareerOutputMatrix(weeks) {
             medianL = [],
             medianTA = [];
 
-        for (var prop in week.team) {
-            var resource;
-            var resourceQty = week.team[prop];
+        for (prop in week.team) {
+            resourceQty = week.team[prop];
 
             if (resourceQty > 0) {
                 resource = _.find(team, { ID: prop });
+                resourceType = resource['Type'];
 
-                if (resource['Type'] === 'L' || resource['Type'] === 'TA') {
-                    for (var j = 0; j < resourceQty; j++) {
+                if (resourceType === 'L' || resourceType === 'TA') {
+                    for (j; j < resourceQty; j++) {
                         medianL.push(parseFloat(resource['L Score']));
                     }
-                    for (var k = 0; k < resourceQty; k++) {
+                    for (k; k < resourceQty; k++) {
                         medianTA.push(parseFloat(resource['TA Score']));
                     }
-                } else if (resource['Type']) {
-                    for (var j = 0; j < resourceQty; j++) {
+                } else if (resourceType) {
+                    for (j; j < resourceQty; j++) {
                         medianA.push(parseFloat(resource['A Score']));
                     }
-                    for (var k = 0; k < resourceQty; k++) {
+                    for (k; k < resourceQty; k++) {
                         medianM.push(parseFloat(resource['M Score']));
                     }
-                    for (var l = 0; l < resourceQty; l++) {
+                    for (l; l < resourceQty; l++) {
                         medianS.push(parseFloat(resource['S Score']));
                     }
                 }
@@ -273,10 +280,19 @@ function buildTeamCareerOutputMatrix(weeks) {
  *      sum each type of experience and add to the week
  */
 function buildTeamExperienceOutputMatrix(weeks) {
-    for (var i = 0; i < weeks.length; i++) {
+    var i = j = k = l = m = n = o = p = q = r = s = t = u = v = x = y = 0,
+        length = weeks.length,
+        row, expClientInterface, expClientUIApplication, expClientCreative,
+        expClientNoUIApplication, expPlatformEcommerce, expPlatformCMS,
+        expEmergingPlatforms, expServerDirect, expServerEnterprise,
+        expMobileNative, expMobileHybrid, expInfrastructureDirect,
+        expInfrastructureEnterprise, expDataAnalysis, expDataVisualization,
+        prop, resource, resourceQty, resourceType;
+
+    for (i; i < length; i++) {
         week = weeks[i];
 
-        var row = [];
+        row = [];
 
         row[0] = 0;
         row[1] = 0;
@@ -293,73 +309,73 @@ function buildTeamExperienceOutputMatrix(weeks) {
         row[12] = 0;
         row[13] = 0;
 
-        var expClientInterface = [],
-            expClientUIApplication = [],
-            expClientCreative = [],
-            expClientNoUIApplication = [],
-            expPlatformEcommerce = [],
-            expPlatformCMS = [],
-            expEmergingPlatforms = [],
-            expServerDirect = [],
-            expServerEnterprise = [],
-            expMobileNative = [],
-            expMobileHybrid = [],
-            expInfrastructureDirect = [],
-            expInfrastructureEnterprise = [],
-            expDataAnalysis = [],
-            expDataVisualization = [];
+        expClientInterface = [];
+        expClientUIApplication = [];
+        expClientCreative = [];
+        expClientNoUIApplication = [];
+        expPlatformEcommerce = [];
+        expPlatformCMS = [];
+        expEmergingPlatforms = [];
+        expServerDirect = [];
+        expServerEnterprise = [];
+        expMobileNative = [];
+        expMobileHybrid = [];
+        expInfrastructureDirect = [];
+        expInfrastructureEnterprise = [];
+        expDataAnalysis = [];
+        expDataVisualization = [];
 
-        for (var prop in week.team) {
-            var resource;
+        for (prop in week.team) {
             var resourceQty = week.team[prop];
 
             if (resourceQty > 0) {
                 resource = _.find(team, { ID: prop });
+                resourceType = resource['Type'];
 
-                if (resource['Type'] && resource['Type'] !== 'L') {
-                    for (var j = 0; j < resourceQty; j++) {
+                if (resourceType && resourceType !== 'L') {
+                    for (j; j < resourceQty; j++) {
                         expClientInterface.push(parseFloat(resource['Exp Client Interface']));
                     }
-                    for (var k = 0; k < resourceQty; k++) {
+                    for (k; k < resourceQty; k++) {
                         expClientUIApplication.push(parseFloat(resource['Exp Client UI Application']));
                     }
-                    for (var y = 0; y < resourceQty; y++) {
+                    for (y; y < resourceQty; y++) {
                         expClientCreative.push(parseFloat(resource['Exp Client Creative']));
                     }
-                    for (var l = 0; l < resourceQty; l++) {
+                    for (l; l < resourceQty; l++) {
                         expClientNoUIApplication.push(parseFloat(resource['Exp Client No-UI Application']));
                     }
-                    for (var m = 0; m < resourceQty; m++) {
+                    for (m; m < resourceQty; m++) {
                         expPlatformEcommerce.push(parseFloat(resource['Exp Platform Ecommerce']));
                     }
-                    for (var n = 0; n < resourceQty; n++) {
+                    for (n; n < resourceQty; n++) {
                         expPlatformCMS.push(parseFloat(resource['Exp Platform CMS']));
                     }
-                    for (var o = 0; o < resourceQty; o++) {
+                    for (o; o < resourceQty; o++) {
                         expEmergingPlatforms.push(parseFloat(resource['Exp Emerging Platforms']));
                     }
-                    for (var p = 0; p < resourceQty; p++) {
+                    for (p; p < resourceQty; p++) {
                         expServerDirect.push(parseFloat(resource['Exp Server Direct']));
                     }
-                    for (var q = 0; q < resourceQty; q++) {
+                    for (q; q < resourceQty; q++) {
                         expServerEnterprise.push(parseFloat(resource['Exp Server Enterprise']));
                     }
-                    for (var r = 0; r < resourceQty; r++) {
+                    for (r; r < resourceQty; r++) {
                         expMobileNative.push(parseFloat(resource['Exp Mobile Native']));
                     }
-                    for (var s = 0; s < resourceQty; s++) {
+                    for (s; s < resourceQty; s++) {
                         expMobileHybrid.push(parseFloat(resource['Exp Mobile Hybrid']));
                     }
-                    for (var t = 0; t < resourceQty; t++) {
+                    for (t; t < resourceQty; t++) {
                         expInfrastructureDirect.push(parseFloat(resource['Exp Infrastructure Direct']));
                     }
-                    for (var u = 0; u < resourceQty; u++) {
+                    for (u; u < resourceQty; u++) {
                         expInfrastructureEnterprise.push(parseFloat(resource['Exp Infrastructure Enterprise']));
                     }
-                    for (var v = 0; v < resourceQty; v++) {
+                    for (v; v < resourceQty; v++) {
                         expDataAnalysis.push(parseFloat(resource['Exp Data Analysis']));
                     }
-                    for (var x = 0; x < resourceQty; x++) {
+                    for (x; x < resourceQty; x++) {
                         expDataVisualization.push(parseFloat(resource['Exp Data Visualization']));
                     }
                 }
@@ -392,18 +408,21 @@ function calculateReferenceWeeks(data) {
     team = data[1];
 
     return new Promise(function(resolve, reject) {
-        var ids = _.map(data[1], 'ID');
-        var weeksColumn = [];
+        var ids = _.map(data[1], 'ID'),
+            weeksColumn = [],
+            i = 1,
+            length = data[2].length,
+            project, weeks, teamSum;
         
-        for(var i = 1; i < data[2].length; i++) {
-            var project = data[2][i],
-                weeks = [],
-                teamSum;
+        for(i; i < length; i++) {
+            project = data[2][i];
+            weeks = [];
+            teamSum;
 
             teamSum = _.reduce(ids, function(sum, id) {
-                var resource = _.find(data[1], { ID: id });
-                var resourceQty = project[id] > 0 ? project[id] : 0;
-                var op = resource['P. Operator'] === '*' ? 
+                var resource = _.find(data[1], { ID: id }),
+                    resourceQty = project[id] > 0 ? project[id] : 0,
+                    op = resource['P. Operator'] === '*' ? 
                             parseInt(resourceQty, 10) * parseFloat(resource['P. Factor']) :
                             parseInt(resourceQty, 10) / parseFloat(resource['P. Factor']);
 
@@ -419,31 +438,55 @@ function calculateReferenceWeeks(data) {
 
 function calculateInputWeeks(data) {
     return new Promise(function(resolve, reject) {
-        var ids = _.map(data[0][1], 'ID');
-        var weeksColumn = [];
+        var ids = _.map(data[0][1], 'ID'),
+            weeksColumn = [],
+            i = 0,
+            length = data[0][3].length,
+            teamSum, weeks;
 
-        for(var i = 0; i < data[0][3].length; i++) {
-            var project = data[0][3][i],
-                weeks = [],
-                teamSum;
+        for(i; i < length; i++) {
+            project = data[0][3][i];
+            weeks = [];
 
             teamSum = _.reduce(ids, function(sum, id) {
-                var resource = _.find(data[0][1], { ID: id });
-                var resourceQty = project[id] > 0 ? project[id] : 0;
-                var op = resource['P. Operator'] === '*' ? 
+                var resource = _.find(data[0][1], { ID: id }),
+                    resourceQty = project[id] > 0 ? project[id] : 0,
+                    op = resource['P. Operator'] === '*' ? 
                             parseInt(resourceQty, 10) * parseFloat(resource['P. Factor']) :
                             parseInt(resourceQty, 10) / parseFloat(resource['P. Factor']);
                 
                 return sum + op;
             }, 0);
 
-            
             weeks[0] = Math.ceil(teamSum > 0 ? (project['Num of templates'] / teamSum) * project['Complexity'] : 0);
             weeksColumn.push(weeks);
         };
         
         resolve({ weeksReference: data[1], weeksInput: weeksColumn });
     });
+}
+
+function calculateFinalDates(data) {
+    return new Promise(function(resolve, reject) {
+        auth()
+            .then(getInputProjects)
+            .then(function(data) {
+                var datesColumn = [],
+                    i = 0,
+                    length = data.length,
+                    project, date;
+
+                for(i; i < length; i++) {
+                    project = data[i];
+                    date = [];
+                    
+                    date[0] = moment(project['Start']).add(parseInt(project['Num of weeks'], 10), 'weeks').format('l');
+                    datesColumn.push(date);
+                };
+                
+                resolve(datesColumn);
+            });
+        });
 }
 
 function fillWeeksReference(data, auth) {
@@ -477,7 +520,7 @@ function fillWeeksInput(data, auth) {
         sheets.spreadsheets.values.update({
             auth: auth,
             spreadsheetId: '1uwqxl9tinbUG79m_O1ONg6R5AzrjEzgcPDxt2gwe86Q',
-            range: '2017 Planned Projects Input!M3:M13',
+            range: '2017 Planned Projects Input!M3:M36',
             valueInputOption: 'RAW',
             resource: {
                 values: data.weeksInput
@@ -489,6 +532,30 @@ function fillWeeksInput(data, auth) {
                 return;
             } else {
                 resolve();
+            }
+        });
+    });
+}
+
+function fillWeeksDatesInput(data, auth) {
+    var sheets = google.sheets('v4');
+
+    return new Promise(function(resolve, reject) {        
+        sheets.spreadsheets.values.update({
+            auth: auth,
+            spreadsheetId: '1uwqxl9tinbUG79m_O1ONg6R5AzrjEzgcPDxt2gwe86Q',
+            range: '2017 Planned Projects Input!B3:B36',
+            valueInputOption: 'RAW',
+            resource: {
+                values: data
+            }
+        }, function(err, response) {
+            if (err) {
+                console.log('The API returned an error: ' + err);
+                reject(err);
+                return;
+            } else {
+                resolve(data);
             }
         });
     });

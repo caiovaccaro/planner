@@ -1,7 +1,7 @@
 var google = require('googleapis');
 var _ = require('lodash');
 var spreadsheetId = '1uwqxl9tinbUG79m_O1ONg6R5AzrjEzgcPDxt2gwe86Q';
-var range = '2017 Planned Projects Input!A1:BN13';
+var range = '2017 Planned Projects Input!A1:BN36';
 var data = [];
 
 module.exports = function (auth) {
@@ -59,5 +59,3 @@ function getRawData(rows) {
         resolve(jsonData);
     });
 }
-
-// num of weeks = the number of templates divided by: (the sum of each resource * its factor) * complexity
