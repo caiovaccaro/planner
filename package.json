@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "faker": "^3.1.0",
     "google-auth-library": "^0.9.10",
     "googleapis": "^15.1.0",
     "lodash": "^4.17.3",
