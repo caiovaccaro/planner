@@ -1,5 +1,5 @@
 var google = require('googleapis'),
-    auth = require('./auth.js'),
+    auth = require('../auth.js'),
     _ = require('lodash'),
     math = require('mathjs');
 

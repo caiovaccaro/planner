@@ -1,64 +1,61 @@
-var auth = require('./auth.js'),
-    input = require('./services/input'),
+var input = require('./services/input'),
     output = require('./services/output-2017-planned'),
     utils = require('./utils/index');
 
-
-// auth
-//  get inputs
-//      calculate reference
-//          fill reference weeks
-//      calculate input
-//          fill input weeks
-//          calculate dates
-//              fill dates input
-//  calculate projects
-//      calculate team matrix
-//          projects
-//          career
-//          experience
-//      build matrix
-//      fill projects sheet
-
 auth()
     .then(function(auth) {
-        Promise.all([
-                input.getReferenceTeamHealth(auth),
-                input.getReferenceTeam(auth),
-                input.getReferenceProjects(auth),
-                input.getInputProjects(auth),
-                input.getReferenceWeeks(auth)
-            ])
-            .then(utils.buildWeeksArray)
-            .then(utils.calculateReferenceWeeks)
-            .then(utils.calculateInputWeeks)
-            .then(function(data) {
-                return output.fillWeeksReference(data, auth);
-            })
-            .then(function(data) {
-                return output.fillWeeksInput(data, auth);
-            })
-            .then(utils.calculateFinalDates)
-            .then(function(data) {
-                return output.fillWeeksDatesInput(data, auth);
-            })
-            .then(function(data) {
-                return utils.calculateProjects(auth, input, data);
-            })
-            .then(utils.buildProjectsTeamOutputMatrix)
-            .then(utils.buildProjectsOutputMatrix)
-            .then(utils.buildTeamCareerOutputMatrix)
-            .then(utils.buildTeamExperienceOutputMatrix)
-            .then(function(data) {
-                return output.fillTeamOutput(auth, data);
-            })
-            .then(function(data) {
-                return output.fillProjectsOutput(auth, data);
-            })
-            .then(function(data) {
-                return output.fillTeamScoreOutput(auth, data);
-            })
-            .then(function(data) {
-                return output.fillTeamExperienceOutput(auth, data);
-            });
+        Promise.all(input.getInputs)
+            .then(calculateAndFillReferenceAndInput)
+            .then(calculateAndFillProjects)
     });
+
+/**
+ * With all reference and input data:
+ *  build a weeks array as database,
+ *  calculate the estimate weeks of the projects reference sheet,
+ *  then calculate the estimate weeks of the projects input sheet,
+ *  fill those data into the spreadsheet.
+ */
+function calculateAndFillReferenceAndInput(data) {
+    return utils.buildWeeksArray(data)
+        .then(utils.calculateReferenceWeeks)
+        .then(utils.calculateInputWeeks)
+        .then(function(data) {
+            return output.fillWeeksReference(data, auth);
+        })
+        .then(function(data) {
+            return output.fillWeeksInput(data, auth);
+        })
+        .then(utils.calculateFinalDates)
+        .then(function(data) {
+            return output.fillWeeksDatesInput(data, auth);
+        });
+}
+
+/**
+ * With the sheet references updated:
+ *  build array matrices as google sheets require for:
+ *      team allocation,
+ *      team career scores,
+ *      team experience scores,
+ *  and fill the planned sheet with projects and team data.
+ */
+function calculateAndFillProjects(data) {
+    return utils.calculateProjects(auth, input, data)
+        .then(utils.buildProjectsTeamOutputMatrix)
+        .then(utils.buildProjectsOutputMatrix)
+        .then(utils.buildTeamCareerOutputMatrix)
+        .then(utils.buildTeamExperienceOutputMatrix)
+        .then(function(data) {
+            return output.fillTeamOutput(auth, data);
+        })
+        .then(function(data) {
+            return output.fillProjectsOutput(auth, data);
+        })
+        .then(function(data) {
+            return output.fillTeamScoreOutput(auth, data);
+        })
+        .then(function(data) {
+            return output.fillTeamExperienceOutput(auth, data);
+        });
+}
