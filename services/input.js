@@ -11,11 +11,13 @@ module.exports = {
     getReferenceTeam: getReferenceTeam,
     getReferenceWeeks: getReferenceWeeks,
     getInputProjects: getInputProjects,
-    getInputs: [
-        getReferenceTeamHealth(auth),
-        getReferenceTeam(auth),
-        getReferenceProjects(auth),
-        getInputProjects(auth),
-        getReferenceWeeks(auth)
-    ]
+    getInputs: function(auth) {
+        return [
+            getReferenceTeamHealth(auth),
+            getReferenceTeam(auth),
+            getReferenceProjects(auth),
+            getInputProjects(auth),
+            getReferenceWeeks(auth)
+        ]
+    }
 }

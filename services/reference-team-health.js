@@ -13,49 +13,57 @@ function fetchData(auth, callback) {
     var sheets = google.sheets('v4');
 
     return new Promise(function(resolve, reject) {
-        sheets.spreadsheets.values.get({
-            auth: auth,
-            spreadsheetId: spreadsheetId,
-            range: range,
-        }, function(err, response) {
-            if (err) {
-                console.log('The API returned an error: ' + err);
-                reject(err);
-                return;
-            }
+        try {
+            sheets.spreadsheets.values.get({
+                auth: auth,
+                spreadsheetId: spreadsheetId,
+                range: range,
+            }, function(err, response) {
+                if (err) {
+                    console.log('The API returned an error: ' + err);
+                    reject(err);
+                    return;
+                }
 
-            var rows = response.values;
+                var rows = response.values;
 
-            if (rows.length == 0) {
-                console.log('No data found.');
-                reject('No data found.');
-            } else {
-                resolve(callback(rows));
-            }
-        });
+                if (rows.length == 0) {
+                    console.log('No data found.');
+                    reject('No data found.');
+                } else {
+                    resolve(callback(rows));
+                }
+            });
+        } catch (err) {
+            reject(err);
+        }
     });
 }
 
 function getRawData(rows) {
-    return new Promise(function(resolve, reject) {
-        for (var i = 0; i < rows.length; i++) {
-            var row = rows[i];
+    return new Promise(function(resolve, reject) { 
+        try {
+            for (var i = 0; i < rows.length; i++) {
+                var row = rows[i];
 
-            if (i === 0) {
-                for (var j = 0; j < row.length; j++) {
-                    data[j] = {
-                        name: row[j],
-                        data: ""
-                    };
-                }
-            } else {
-                for (var k = 0; k < row.length; k++) {
-                    if (data[k]) {
-                        data[k].data = row[k];
+                if (i === 0) {
+                    for (var j = 0; j < row.length; j++) {
+                        data[j] = {
+                            name: row[j],
+                            data: ""
+                        };
+                    }
+                } else {
+                    for (var k = 0; k < row.length; k++) {
+                        if (data[k]) {
+                            data[k].data = row[k];
+                        }
                     }
                 }
             }
+            resolve(data);
+        } catch (err) {
+            reject(err);
         }
-        resolve(data);
     });
 }

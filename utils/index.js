@@ -7,6 +7,5 @@ module.exports = {
     buildProjectsTeamOutputMatrix: require('./build-projects-team-output-matrix'),
     buildProjectsOutputMatrix: require('./build-projects-output-matrix'),
     buildTeamCareerOutputMatrix: require('./build-team-career-output-matrix'),
-    buildTeamExperienceOutputMatrix: require('./build-team-experience-output-matrix'),
-    getResourcesInAWeek: require('./get-resources-in-a-week')
+    buildTeamExperienceOutputMatrix: require('./build-team-experience-output-matrix')
 }
