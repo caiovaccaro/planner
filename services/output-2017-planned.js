@@ -11,7 +11,8 @@ module.exports = {
     fillWeeksDatesInput: fillWeeksDatesInput,
     fillWeeksInput: fillWeeksInput,
     fillWeeksReference: fillWeeksReference,
-    fillTeamAllocation: fillTeamAllocation
+    fillTeamAllocation: fillTeamAllocation,
+    fillProjectsView: fillProjectsView
 }
 
 function fillWeeksReference(data, auth) {
@@ -222,6 +223,34 @@ function fillTeamAllocation(auth, data) {
                 valueInputOption: 'RAW',
                 resource: {
                     values: data.teamAllocationMatrix
+                }
+            }, function(err, response) {
+                if (err) {
+                    console.log('The API returned an error: ' + err);
+                    reject(err);
+                    return;
+                } else {
+                    resolve(data);
+                }
+            });
+        } catch (err) {
+            reject(err);
+        }
+    });
+}
+
+function fillProjectsView(auth, data) {
+    var sheets = google.sheets('v4');
+
+    return new Promise(function(resolve, reject) {        
+        try {
+            sheets.spreadsheets.values.update({
+                auth: auth,
+                spreadsheetId: '1uwqxl9tinbUG79m_O1ONg6R5AzrjEzgcPDxt2gwe86Q',
+                range: '2017 Planned Projects Output!A1:BH1002',
+                valueInputOption: 'RAW',
+                resource: {
+                    values: data.projectsViewMatrix
                 }
             }, function(err, response) {
                 if (err) {

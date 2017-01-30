@@ -10,10 +10,12 @@ getAuth()
                 return calculateAndFillReferenceAndInput(data, auth);
             })
             .then(function(data) {
-                return calculateAndFillProjects(data, auth);
+                return calculateAndFillPlanned(data, auth);
             })
             .then(function(data) {
                 return calculateAndFillTeamAllocation(data, auth);
+            }).then(function(data) {
+                return calculateAndFillProjects(data, auth);
             });
     }).catch(function(err) {
         console.log(err);
@@ -54,7 +56,7 @@ function calculateAndFillReferenceAndInput(data, auth) {
  *      team experience scores,
  *  and fill the planned sheet with projects and team data.
  */
-function calculateAndFillProjects(data, auth) {
+function calculateAndFillPlanned(data, auth) {
     return utils.calculateProjects(auth, data)
         .then(utils.buildProjectsTeamOutputMatrix)
         .then(utils.buildProjectsOutputMatrix)
@@ -81,3 +83,32 @@ function calculateAndFillTeamAllocation(data, auth) {
             return output.fillTeamAllocation(auth, data);
         });
 }
+
+/**
+ * Organize data by project:
+ *  name:
+ *  type:
+ *  start date:
+ *  end date:
+ *  weeks:
+ *  ...
+ *  each employee assigned:
+ *      id:
+ *      name:
+ *      role:
+ *      type:
+ *      level:
+ */
+function calculateAndFillProjects(data, auth) {
+    return utils.calculateProjectsView(data)
+        .then(utils.buildProjectsViewOutput)
+        .then(function(data) {
+            return output.fillProjectsView(auth, data);
+        });
+}
+
+function calculateAndFillCapabilities(data, auth) {
+    
+}
+
+function calculateAndFillGoals(data, auth) {}

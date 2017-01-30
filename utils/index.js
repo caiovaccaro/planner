@@ -9,5 +9,7 @@ module.exports = {
     buildTeamCareerOutputMatrix: require('./build-team-career-output-matrix'),
     buildTeamExperienceOutputMatrix: require('./build-team-experience-output-matrix'),
     calculateResourcesAllocation: require('./calculate-resources-allocation'),
-    buildTeamAllocationOutput: require('./build-team-allocation-output')
+    buildTeamAllocationOutput: require('./build-team-allocation-output'),
+    calculateProjectsView: require('./calculate-projects-view'),
+    buildProjectsViewOutput: require('./build-projects-view-output')
 }
