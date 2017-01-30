@@ -12,7 +12,8 @@ module.exports = {
     fillWeeksInput: fillWeeksInput,
     fillWeeksReference: fillWeeksReference,
     fillTeamAllocation: fillTeamAllocation,
-    fillProjectsView: fillProjectsView
+    fillProjectsView: fillProjectsView,
+    fillCapabilities: fillCapabilities
 }
 
 function fillWeeksReference(data, auth) {
@@ -51,7 +52,7 @@ function fillWeeksInput(data, auth) {
             sheets.spreadsheets.values.update({
                 auth: auth,
                 spreadsheetId: '1uwqxl9tinbUG79m_O1ONg6R5AzrjEzgcPDxt2gwe86Q',
-                range: '2017 Planned Projects Input!M3:M36',
+                range: '2017 Planned Projects Input!N3:N36',
                 valueInputOption: 'RAW',
                 resource: {
                     values: data.weeksInput
@@ -219,7 +220,7 @@ function fillTeamAllocation(auth, data) {
             sheets.spreadsheets.values.update({
                 auth: auth,
                 spreadsheetId: '1uwqxl9tinbUG79m_O1ONg6R5AzrjEzgcPDxt2gwe86Q',
-                range: '2017 Planned Team Output!A2:BF1002',
+                range: '2017 Planned Team Output!A2:BI1002',
                 valueInputOption: 'RAW',
                 resource: {
                     values: data.teamAllocationMatrix
@@ -251,6 +252,34 @@ function fillProjectsView(auth, data) {
                 valueInputOption: 'RAW',
                 resource: {
                     values: data.projectsViewMatrix
+                }
+            }, function(err, response) {
+                if (err) {
+                    console.log('The API returned an error: ' + err);
+                    reject(err);
+                    return;
+                } else {
+                    resolve(data);
+                }
+            });
+        } catch (err) {
+            reject(err);
+        }
+    });
+}
+
+function fillCapabilities(auth, data) {
+    var sheets = google.sheets('v4');
+
+    return new Promise(function(resolve, reject) {        
+        try {
+            sheets.spreadsheets.values.update({
+                auth: auth,
+                spreadsheetId: '1uwqxl9tinbUG79m_O1ONg6R5AzrjEzgcPDxt2gwe86Q',
+                range: '2017 Planned Capabilities Output!A2:E50',
+                valueInputOption: 'RAW',
+                resource: {
+                    values: data.capabilitiesOutput
                 }
             }, function(err, response) {
                 if (err) {

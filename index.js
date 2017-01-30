@@ -1,7 +1,8 @@
 var getAuth = require('./auth.js'),
     input = require('./services/input'),
     output = require('./services/output-2017-planned'),
-    utils = require('./utils/index');
+    utils = require('./utils/index'),
+    _ = require('lodash');
 
 getAuth()
     .then(function(auth) {
@@ -16,7 +17,9 @@ getAuth()
                 return calculateAndFillTeamAllocation(data, auth);
             }).then(function(data) {
                 return calculateAndFillProjects(data, auth);
-            });
+            }).then(function(data) {
+                return calculateAndFillCapabilities(data, auth);
+            })
     }).catch(function(err) {
         console.log(err);
     });
@@ -107,8 +110,19 @@ function calculateAndFillProjects(data, auth) {
         });
 }
 
+/**
+ * type
+ *  number of projects
+ *  hours
+ *  sold
+ *  profit
+ */
 function calculateAndFillCapabilities(data, auth) {
-    
+    return utils.calculateCapabilities(data)
+        .then(utils.buildCapabilitiesOutput)
+        .then(function(data) {
+            return output.fillCapabilities(auth, data);
+        });
 }
 
 function calculateAndFillGoals(data, auth) {}

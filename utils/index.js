@@ -11,5 +11,7 @@ module.exports = {
     calculateResourcesAllocation: require('./calculate-resources-allocation'),
     buildTeamAllocationOutput: require('./build-team-allocation-output'),
     calculateProjectsView: require('./calculate-projects-view'),
-    buildProjectsViewOutput: require('./build-projects-view-output')
+    buildProjectsViewOutput: require('./build-projects-view-output'),
+    calculateCapabilities: require('./calculate-capabilities'),
+    buildCapabilitiesOutput: require('./build-capabilities-output')
 }

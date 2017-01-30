@@ -1,6 +1,6 @@
 var google = require('googleapis');
 var spreadsheetId = '1uwqxl9tinbUG79m_O1ONg6R5AzrjEzgcPDxt2gwe86Q';
-var range = '2017 Reference Team Data!A1:AB54';
+var range = '2017 Reference Team Data!A1:AC54';
 var data = [];
 
 module.exports = function (auth) {

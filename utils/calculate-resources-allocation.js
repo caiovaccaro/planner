@@ -58,7 +58,10 @@ module.exports = function calculateResourcesAllocation(data) {
                                         role: resource['Role'],
                                         type: resource['Type'],
                                         level: resource['Level'],
-                                        availableHours: resource['Available hours']
+                                        availableHours: resource['Available hours'],
+                                        empty: null,
+                                        empty: null,
+                                        empty: null
                                     };
 
                                     if (!existingMember.length) {
