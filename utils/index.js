@@ -13,5 +13,7 @@ module.exports = {
     calculateProjectsView: require('./calculate-projects-view'),
     buildProjectsViewOutput: require('./build-projects-view-output'),
     calculateCapabilities: require('./calculate-capabilities'),
-    buildCapabilitiesOutput: require('./build-capabilities-output')
+    buildCapabilitiesOutput: require('./build-capabilities-output'),
+    calculateFinance: require('./calculate-finance'),
+    buildFinanceOutput: require('./build-finance-output')
 }

@@ -19,6 +19,8 @@ getAuth()
                 return calculateAndFillProjects(data, auth);
             }).then(function(data) {
                 return calculateAndFillCapabilities(data, auth);
+            }).then(function(data) {
+                return calculateAndFillFinance(data, auth);
             })
     }).catch(function(err) {
         console.log(err);
@@ -125,4 +127,10 @@ function calculateAndFillCapabilities(data, auth) {
         });
 }
 
-function calculateAndFillGoals(data, auth) {}
+function calculateAndFillFinance(data, auth) {
+    return utils.calculateFinance(data)
+        .then(utils.buildFinanceOutput)
+        .then(function(data) {
+            return output.fillFinance(auth, data);
+        });
+}

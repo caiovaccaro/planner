@@ -13,7 +13,8 @@ module.exports = {
     fillWeeksReference: fillWeeksReference,
     fillTeamAllocation: fillTeamAllocation,
     fillProjectsView: fillProjectsView,
-    fillCapabilities: fillCapabilities
+    fillCapabilities: fillCapabilities,
+    fillFinance: fillFinance
 }
 
 function fillWeeksReference(data, auth) {
@@ -269,6 +270,10 @@ function fillProjectsView(auth, data) {
 }
 
 function fillCapabilities(auth, data) {
+    return Promise.all([fillCapabilitiesWeek(auth, data), fillCapabilitiesYear(auth,data)]);
+}
+
+function fillCapabilitiesWeek(auth, data) {
     var sheets = google.sheets('v4');
 
     return new Promise(function(resolve, reject) {        
@@ -276,10 +281,66 @@ function fillCapabilities(auth, data) {
             sheets.spreadsheets.values.update({
                 auth: auth,
                 spreadsheetId: '1uwqxl9tinbUG79m_O1ONg6R5AzrjEzgcPDxt2gwe86Q',
-                range: '2017 Planned Capabilities Output!A2:E50',
+                range: '2017 Planned Capabilities Output!A2:E1000',
                 valueInputOption: 'RAW',
                 resource: {
                     values: data.capabilitiesOutput
+                }
+            }, function(err, response) {
+                if (err) {
+                    console.log('The API returned an error: ' + err);
+                    reject(err);
+                    return;
+                } else {
+                    resolve(data);
+                }
+            });
+        } catch (err) {
+            reject(err);
+        }
+    });
+}
+
+function fillCapabilitiesYear(auth, data) {
+    var sheets = google.sheets('v4');
+
+    return new Promise(function(resolve, reject) {        
+        try {
+            sheets.spreadsheets.values.update({
+                auth: auth,
+                spreadsheetId: '1uwqxl9tinbUG79m_O1ONg6R5AzrjEzgcPDxt2gwe86Q',
+                range: '2017 Planned Capabilities Output!J2:M1000',
+                valueInputOption: 'RAW',
+                resource: {
+                    values: data.capabilitiesOutputYear
+                }
+            }, function(err, response) {
+                if (err) {
+                    console.log('The API returned an error: ' + err);
+                    reject(err);
+                    return;
+                } else {
+                    resolve(data);
+                }
+            });
+        } catch (err) {
+            reject(err);
+        }
+    });
+}
+
+function fillFinance(auth, data) {
+    var sheets = google.sheets('v4');
+
+    return new Promise(function(resolve, reject) {        
+        try {
+            sheets.spreadsheets.values.update({
+                auth: auth,
+                spreadsheetId: '1uwqxl9tinbUG79m_O1ONg6R5AzrjEzgcPDxt2gwe86Q',
+                range: '2017 Planned Finance Goal Output!A2:C53',
+                valueInputOption: 'RAW',
+                resource: {
+                    values: data.financeMatrix
                 }
             }, function(err, response) {
                 if (err) {
