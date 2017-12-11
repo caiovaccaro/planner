@@ -48,15 +48,14 @@ function getRawData(rows) {
             var headers = first.split(',');
             
             var jsonData = [];
-            for ( var i = 2, length = rows.length; i < length; i++ )
-            {
+            for (var i = 2, length = rows.length; i < length; i++) {
                 var myRow = rows[i].join();
                 var row = myRow.split(',');
                 
                 var data = {};
-                for ( var x = 0; x < row.length; x++ )
-                {
-                data[headers[x]] = row[x];
+
+                for (var x = 0; x < row.length; x++) {
+                    data[headers[x]] = row[x];
                 }
                 jsonData.push(data);
             }
