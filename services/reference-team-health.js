@@ -1,7 +1,7 @@
-var google = require('googleapis');
-var spreadsheetId = '1uwqxl9tinbUG79m_O1ONg6R5AzrjEzgcPDxt2gwe86Q';
-var range = '2017 Reference Team Health Data!Q1:Y2';
-var data = [];
+var google = require('googleapis'),
+    spreadsheetId = '1uwqxl9tinbUG79m_O1ONg6R5AzrjEzgcPDxt2gwe86Q',
+    range = '2017 Reference Team Health Data!Q1:Y2',
+    data = [];
 
 module.exports = function (auth) {
   return fetchData(auth, function(rows) {
@@ -19,13 +19,15 @@ function fetchData(auth, callback) {
                 spreadsheetId: spreadsheetId,
                 range: range,
             }, function(err, response) {
+                var rows;
+
                 if (err) {
                     console.log('The API returned an error: ' + err);
                     reject(err);
                     return;
                 }
 
-                var rows = response.values;
+                rows = response.values;
 
                 if (rows.length == 0) {
                     console.log('No data found.');
@@ -42,19 +44,21 @@ function fetchData(auth, callback) {
 
 function getRawData(rows) {
     return new Promise(function(resolve, reject) { 
+        var i, row, j, k;
+
         try {
-            for (var i = 0; i < rows.length; i++) {
-                var row = rows[i];
+            for (i = 0; i < rows.length; i++) {
+                row = rows[i];
 
                 if (i === 0) {
-                    for (var j = 0; j < row.length; j++) {
+                    for (j = 0; j < row.length; j++) {
                         data[j] = {
                             name: row[j],
                             data: ""
                         };
                     }
                 } else {
-                    for (var k = 0; k < row.length; k++) {
+                    for (k = 0; k < row.length; k++) {
                         if (data[k]) {
                             data[k].data = row[k];
                         }

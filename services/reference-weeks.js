@@ -1,7 +1,7 @@
-var google = require('googleapis');
-var spreadsheetId = '1uwqxl9tinbUG79m_O1ONg6R5AzrjEzgcPDxt2gwe86Q';
-var range = '2017 Planned Output!A2:B54';
-var data = [];
+var google = require('googleapis'),
+    spreadsheetId = '1uwqxl9tinbUG79m_O1ONg6R5AzrjEzgcPDxt2gwe86Q',
+    range = '2017 Planned Output!A2:B54',
+    data = [];
 
 module.exports = function (auth) {
   return fetchData(auth, function(rows) {
@@ -19,13 +19,15 @@ function fetchData(auth, callback) {
                 spreadsheetId: spreadsheetId,
                 range: range,
             }, function(err, response) {
+                var rows;
+
                 if (err) {
                     console.log('The API returned an error: ' + err);
                     reject(err);
                     return;
                 }
 
-                var rows = response.values;
+                rows = response.values;
 
                 if (rows.length == 0) {
                     console.log('No data found.');
@@ -42,17 +44,20 @@ function fetchData(auth, callback) {
 
 function getRawData(rows) {
     return new Promise(function(resolve, reject) {
+        var first, headers, jsonData, i,
+        length, myRow, row, data, x;
+
         try {
-            var first = rows[0].join()
-            var headers = first.split(',');
+            first = rows[0].join()
+            headers = first.split(',');
+            jsonData = [];
             
-            var jsonData = [];
-            for (var i = 1, length = rows.length; i < length; i++) {
-                var myRow = rows[i].join();
-                var row = myRow.split(',');
-                
-                var data = {};
-                for (var x = 0; x < row.length; x++) {
+            for (i = 1, length = rows.length; i < length; i++) {
+                myRow = rows[i].join();
+                row = myRow.split(',');
+                data = {};
+
+                for (x = 0; x < row.length; x++) {
                     data[headers[x]] = row[x];
                 }
                 jsonData.push(data);
