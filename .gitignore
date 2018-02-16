@@ -1,4 +1,6 @@
 client_secret.json
+.idea
+.DS_Store
 
 # Logs
 logs

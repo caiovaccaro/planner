@@ -1,7 +1,7 @@
 var getAuth = require('./auth.js'),
     input = require('./services/input'),
     output = require('./services/output-2017-planned'),
-    utils = require('./utils/index'),
+    utils = require('./modules/index'),
     _ = require('lodash');
 
 getAuth()
