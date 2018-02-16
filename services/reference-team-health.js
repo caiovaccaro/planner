@@ -1,47 +1,14 @@
-var google = require('googleapis'),
-    spreadsheetId = '1uwqxl9tinbUG79m_O1ONg6R5AzrjEzgcPDxt2gwe86Q',
+var spreadsheetId = '1uwqxl9tinbUG79m_O1ONg6R5AzrjEzgcPDxt2gwe86Q',
     range = '2017 Reference Team Health Data!Q1:Y2',
-    data = [];
+    fetchData = require('../utils/fetchData');
 
 module.exports = function (auth) {
-  return fetchData(auth, function(rows) {
-      return getRawData(rows);
-  });
-}
-
-function fetchData(auth, callback) {
-    var sheets = google.sheets('v4');
-
-    return new Promise(function(resolve, reject) {
-        try {
-            sheets.spreadsheets.values.get({
-                auth: auth,
-                spreadsheetId: spreadsheetId,
-                range: range,
-            }, function(err, response) {
-                var rows;
-
-                if (err) {
-                    console.log('The API returned an error: ' + err);
-                    reject(err);
-                    return;
-                }
-
-                rows = response.values;
-
-                if (rows.length == 0) {
-                    console.log('No data found.');
-                    reject('No data found.');
-                } else {
-                    resolve(callback(rows));
-                }
-            });
-        } catch (err) {
-            reject(err);
-        }
+    return fetchData(auth, spreadsheetId, range, function(rows) {
+        return getRawData(rows);
     });
-}
+};
 
+// TODO: Check why this getRawData has to be different from utils/getRawData
 function getRawData(rows) {
     return new Promise(function(resolve, reject) { 
         var i, row, j, k;

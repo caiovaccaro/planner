@@ -1,5 +1,4 @@
-var auth = require('../auth.js'),
-    getReferenceTeamHealth = require('./reference-team-health'),
+var getReferenceTeamHealth = require('./reference-team-health'),
     getReferenceProjects = require('./reference-projects'),
     getReferenceTeam = require('./reference-team'),
     getReferenceWeeks = require('./reference-weeks'),
@@ -20,4 +19,4 @@ module.exports = {
             getReferenceWeeks(auth)
         ]
     }
-}
+};

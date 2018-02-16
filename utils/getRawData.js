@@ -1,15 +1,6 @@
-var spreadsheetId = '1uwqxl9tinbUG79m_O1ONg6R5AzrjEzgcPDxt2gwe86Q',
-    range = '2017 Planned Projects Input!A1:BN36',
-    fetchData = require('../utils/fetchData');
+var google = require('googleapis');
 
-module.exports = function (auth) {
-    return fetchData(auth, spreadsheetId, range, function(rows) {
-        return getRawData(rows);
-    });
-};
-
-// TODO: Only 'i' is different from utils/getRawData, parametize?
-function getRawData(rows) {
+module.exports = function getRawData(rows) {
     return new Promise(function(resolve, reject) {
         var first, headers, jsonData, i,
             length, myRow, row, data, x;
@@ -19,7 +10,7 @@ function getRawData(rows) {
             headers = first.split(',');
             jsonData = [];
 
-            for (i = 2, length = rows.length; i < length; i++) {
+            for (i = 1, length = rows.length; i < length; i++) {
                 myRow = rows[i].join();
                 row = myRow.split(',');
                 data = {};
@@ -27,7 +18,6 @@ function getRawData(rows) {
                 for (x = 0; x < row.length; x++) {
                     data[headers[x]] = row[x];
                 }
-
                 jsonData.push(data);
             }
 
@@ -36,4 +26,4 @@ function getRawData(rows) {
             reject(err);
         }
     });
-}
+};
